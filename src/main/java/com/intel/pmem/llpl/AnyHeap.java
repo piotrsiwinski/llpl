@@ -7,26 +7,33 @@
 
 package com.intel.pmem.llpl;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.SortedMap;
-import java.util.TreeMap;
-import java.util.Arrays;
-import java.util.MissingResourceException;
-import java.io.File;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.util.Map;
+import java.util.Objects;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
+
 import sun.misc.Unsafe;
+import sun.nio.ch.DirectBuffer;
+
+import static java.util.Objects.isNull;
 
 /**
- * The base class for all heap classes.  A heap contains memory allocated in units of memory blocks.<br><br>  
- Heap {@code createHeap()} factory methods accept a {@code String} path argument that specifies the identity of the heap and an optional
+ * The base class for all heap classes.  A heap contains memory allocated in units of memory blocks.<br><br>
+ * Heap {@code createHeap()} factory methods accept a {@code String} path argument that specifies the identity of the heap and an optional
  * {@code long} size argument. There are 5 ways to configure the size of a heap:<br><br>
- * 1. fixed size -- the path argument is a file path and a supplied size arugument sets both the minimum and 
+ * 1. fixed size -- the path argument is a file path and a supplied size arugument sets both the minimum and
  * maximum size of the heap.<br>
- * 2. growable -- the path argument is a file path and the heap size starts with size {@code MINIMUM_HEAP_SIZE}, growing 
+ * 2. growable -- the path argument is a file path and the heap size starts with size {@code MINIMUM_HEAP_SIZE}, growing
  * in size as needed up to the available memory.<br>
  * 3. growable with limit -- the path argument is a file path and the heap size starts with size {@code MINIMUM_HEAP_SIZE},
  * growing in size as needed up to a maximum size set by the supplied size argument.<br>
@@ -34,73 +41,69 @@ import sun.misc.Unsafe;
  * maximum size of the heap.<br>
  * 5. fused memory pool -- the path argument points to a memory pool configuration file that describes DAX
  * devices [EXPERIMENTAL] or file systems to be fused for use with a single heap.  The combined memory sizes
- * of devices or file systems sets both the minimum and maximum size of the heap.<br>  
+ * of devices or file systems sets both the minimum and maximum size of the heap.<br>
  *
- * @see com.intel.pmem.llpl.Heap   
- * @see com.intel.pmem.llpl.PersistentHeap   
- * @see com.intel.pmem.llpl.TransactionalHeap   
+ * @see com.intel.pmem.llpl.Heap
+ * @see com.intel.pmem.llpl.PersistentHeap
+ * @see com.intel.pmem.llpl.TransactionalHeap
  */
 public abstract class AnyHeap {
     private static final int TOTAL_ALLOCATION_CLASSES = 40;
     private static final int USER_CLASS_INDEX = 15;
     private static final int MAX_USER_CLASSES = (TOTAL_ALLOCATION_CLASSES - USER_CLASS_INDEX) / 2;
+    // todo: get rid of UNSAFE
+    private MappedByteBuffer byteBuffer;
     static Unsafe UNSAFE;
+
     private static final Map<String, AnyHeap> heaps = new ConcurrentHashMap<>();
     private static final long HEAP_VERSION = 900;
 
     /**
-    * The minimum size for a heap. Attempting to create a heap with a size smaller that this will throw an 
-    * {@code IllegalArgumentException}.
-    */
+     * The minimum size for a heap. Attempting to create a heap with a size smaller that this will throw an
+     * {@code IllegalArgumentException}.
+     */
     public static final long MINIMUM_HEAP_SIZE;
+
     static {
-        System.loadLibrary("llpl");
-        try {
-            java.lang.reflect.Field f = Unsafe.class.getDeclaredField("theUnsafe");
-            f.setAccessible(true);
-            UNSAFE = (Unsafe)f.get(null);
-        }
-        catch (Exception e) {
-            throw new RuntimeException("Unable to initialize UNSAFE.");
-        }
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            heaps.forEach((String K, AnyHeap V) -> { nativeCloseHeap(V.poolHandle()); });
-        }));
-        MINIMUM_HEAP_SIZE = nativeMinHeapSize();
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> heaps.forEach((String K, AnyHeap V) -> nativeCloseHeap(V.poolHandle()))));
+        MINIMUM_HEAP_SIZE = minHeapSize();
     }
 
     private boolean open;
     private final String path;
     private boolean valid;
-    private final long poolHandle;
+    private final long poolHandle; // zastąpić referencją do byteBuffera
     private long size;
     private SortedMap<Long, Integer> userSizes;
     private long[] allocationClasses;
     private Metadata metadata;
     static final String POOL_SET_FILE = "myobjpool.set";
 
+    // Tworzy nową stertę o podanym rozmiarze
     AnyHeap(String path, long requestedSize) {
         this.path = path;
-        userSizes = new TreeMap<Long, Integer>();
+        userSizes = new TreeMap<>();
         allocationClasses = new long[TOTAL_ALLOCATION_CLASSES];
-        poolHandle = nativeCreateHeap(path, requestedSize, allocationClasses, this.getHeapLayoutID());
-        if (poolHandle == 0) throw new HeapException("Failed to create heap.");
+        if (requestedSize == 0) {
+            poolHandle = openHeap(path, allocationClasses, this.getHeapLayoutID());
+        } else if (requestedSize > 0) {
+            byteBuffer = createHeap(path, requestedSize, allocationClasses, this.getHeapLayoutID());
+            poolHandle =  byteBuffer.hashCode();
+//            poolHandle = createHeap(path, requestedSize, allocationClasses, this.getHeapLayoutID());
+        } else {
+            throw new HeapException("Heap size cannot be negative");
+        }
+        if (isNull(byteBuffer)) throw new HeapException("Failed to create heap.");
+//        if (poolHandle == 0) throw new HeapException("Failed to create heap.");
         valid = true;
-        this.size = nativeProbeHeapSize(poolHandle, this.size);
+        this.size = probeHeapSize(poolHandle, this.size);
         metadata = new Metadata(this);
         open = true;
     }
 
+    // otwiera stertę
     AnyHeap(String path) {
-        this.path = path;
-        userSizes = new TreeMap<Long, Integer>();
-        allocationClasses = new long[TOTAL_ALLOCATION_CLASSES];
-        poolHandle = nativeOpenHeap(path, allocationClasses, this.getHeapLayoutID());
-        if (poolHandle == 0) throw new HeapException("Failed to open heap.");
-        valid = true;
-        this.size = nativeProbeHeapSize(poolHandle, this.size);
-        metadata = new Metadata(this);
-        open = true;
+        this(path, 0);
     }
 
     static class Metadata {
@@ -112,7 +115,7 @@ public abstract class AnyHeap {
         public Metadata(AnyHeap heap) {
             long metadataHandle = nativeGetRoot(heap.poolHandle());
             this.metaBlock = heap.internalMemoryBlockFromHandle(metadataHandle);
-            if (metaBlock.getLong(HEAP_VERSION_OFFSET) == 0L) { 
+            if (metaBlock.getLong(HEAP_VERSION_OFFSET) == 0L) {
                 metaBlock.transactionalSetLong(HEAP_VERSION_OFFSET, AnyHeap.HEAP_VERSION);
             }
         }
@@ -121,20 +124,19 @@ public abstract class AnyHeap {
         public void setUserRoot(long value) {metaBlock.transactionalSetLong(USER_ROOT_OFFSET, value);}
         public long getVersion() {return metaBlock.getLong(HEAP_VERSION_OFFSET);}
     }
-    
+
     static boolean getHeap(String path) {
-	return heaps.containsKey(path);
+        return heaps.containsKey(path);
     }
 
     static AnyHeap getHeap(String path, Class cls) {
-    	AnyHeap h = heaps.get(path);
-    	try {
-    	    cls.cast(h);	
-    	} 
-	catch (ClassCastException e){
-    	    throw new HeapException("Failed to open heap. wrong heap type (wrong layout)");
-    	}
-	   return h;
+        AnyHeap h = heaps.get(path);
+        try {
+            cls.cast(h);
+        } catch (ClassCastException e) {
+            throw new HeapException("Failed to open heap. wrong heap type (wrong layout)");
+        }
+        return h;
     }
 
     static Class getHeapClass(String heapName) {
@@ -158,9 +160,9 @@ public abstract class AnyHeap {
 
     /**
      * [EXPERIMENTAL] Registers a specific size for optimized allocation of memory blocks of that size.  Use this for very
-     * common block sizes to optimize allocation speed and minimize footprint of memory blocks on the heap.<br> 
-     * Separate registrations are required for regular and compact memory blocks of a given size. Each heap 
-     * instance maintains a separate set of registered sizes.  Size registration is itself not persistent so 
+     * common block sizes to optimize allocation speed and minimize footprint of memory blocks on the heap.<br>
+     * Separate registrations are required for regular and compact memory blocks of a given size. Each heap
+     * instance maintains a separate set of registered sizes.  Size registration is itself not persistent so
      * sizes must be registered each time a heap is opened.
      * @param size the required size of an allocated memory block
      * @param compact true if {@code size} is associated with a compact memory block
@@ -221,10 +223,9 @@ public abstract class AnyHeap {
             return (flag == 1) ? true : false;
         }
         File file = new File(path);
-        if (file.exists() && file.isFile()) { 
+        if (file.exists() && file.isFile()) {
             return true;
-        }
-        else
+        } else
             return (file.exists() && file.isDirectory() && new File(path, POOL_SET_FILE).exists());
     }
 
@@ -330,9 +331,9 @@ public abstract class AnyHeap {
         long custom_unit_size = 0;
         int custom_id = 0;
         for (Map.Entry<Long, Integer> e : userSizes.entrySet()) {
-            custom_unit_size = e.getKey(); 
+            custom_unit_size = e.getKey();
             if (custom_unit_size == 0) break;
-            custom_id = e.getValue(); 
+            custom_id = e.getValue();
             if (custom_unit_size == size) {
                 return custom_id;
             }
@@ -375,46 +376,95 @@ public abstract class AnyHeap {
             throw new HeapException("The partition \"" + file.getAbsolutePath() + "\" must have at least " + MINIMUM_HEAP_SIZE + " bytes");
 
         Charset charset = Charset.forName("US-ASCII");
-        StringBuffer sb = new StringBuffer(); 
-        sb.append( "PMEMPOOLSET\n" 
-                  + "OPTION SINGLEHDR\n"
-                  + capacity + " " + file.getAbsolutePath() + "\n");
+        StringBuffer sb = new StringBuffer();
+        sb.append("PMEMPOOLSET\n"
+            + "OPTION SINGLEHDR\n"
+            + capacity + " " + file.getAbsolutePath() + "\n");
         if (poolFile.createNewFile()) {
             BufferedWriter writer = Files.newBufferedWriter(poolFile.toPath(), charset);
-            writer.write(sb.toString(), 0, sb.toString().length()); 
+            writer.write(sb.toString(), 0, sb.toString().length());
             writer.close();
-        }
-        else throw new HeapException("Heap \"" + file.getAbsolutePath() + "\" already exists");
+        } else throw new HeapException("Heap \"" + file.getAbsolutePath() + "\" already exists");
     }
 
     boolean outOfBounds(long offset) {
         if (offset >= size) {
-            size = nativeProbeHeapSize(poolHandle, size);
+            size = probeHeapSize(poolHandle, size);
             if (offset >= size) return true;
-        } 
+        }
         return false;
     }
-    
+
     static long getUsableSize(AnyMemoryBlock mb) {
         return nativeUsableSize(mb.directAddress());
     }
 
     static int removePool(String path) {
-	   return nativeRemovePool(path);
+        return nativeRemovePool(path);
     }
 
+
+
+    /* CUSTOM METHODS USED TO REPLACE NATIVE CALLS */
+
+    private MappedByteBuffer createHeap(String path, long size, long[] allocationClasses, String layout) {
+        final String fileMode = "rw";
+        try (RandomAccessFile fileInputStream = new RandomAccessFile(path, fileMode);
+             FileChannel channel = fileInputStream.getChannel()) {
+            return channel.map(FileChannel.MapMode.PRIVATE, 0, size);
+        } catch (IOException e) {
+            // in case of IOE method will just return empty ByteBuffer
+            e.printStackTrace();
+        }
+        throw new RuntimeException("AnyHeap::createHeap to implement");
+    }
+
+
+    long openHeap(String path, long[] allocationClasses, String layout) {
+        throw new RuntimeException("AnyHeap::openHeap to implement");
+    }
+
+
+    long probeHeapSize(long poolId, long currentSize) {
+        throw new RuntimeException("AnyHeap::probeHeapSize to implement");
+    }
+
+    // zamiennik nativeMinHeapSize() - do sprawdzenia
+    static long minHeapSize() {
+        // todo: remove magic constant
+        // wartość zwracana przez PMDK - sprawdzić czy to domyślna wartość
+        final long magicMinHeapSize = 8388608;
+        return magicMinHeapSize;
+    }
+
+
+    /* STATIC NATIVE METHODS */
     private static native long nativeAllocateTransactional(long poolHandle, long size, int class_index);
+
     private static native long nativeAllocateAtomic(long poolHandle, long size, int class_index);
+
     private static native int nativeFree(long poolHandle, long addr);
+
     private static native int nativeFreeAtomic(long addr);
+
     private static synchronized native long nativeCreateHeap(String path, long size, long[] allocationClasses, String layout);
+
+    // metoda jedynie użyta w konstruktorze
     private static synchronized native long nativeOpenHeap(String path, long[] allocationClasses, String layout);
+
+
     private static synchronized native int nativeRegisterAllocationClass(long poolHandle, long size);
+
     private static synchronized native void nativeCloseHeap(long poolHandle);
+
     private static synchronized native long nativeGetRoot(long poolHandle);
+
     private static native long nativeUsableSize(long addr);
+
     private static native long nativeDirectAddress(long poolId, long offset);
+
     private static native int nativeHeapExists(String path);
+
     private static native long nativeHeapSize(String path);
     private static native int nativeRemovePool(String path);
     private static native long nativeProbeHeapSize(long poolId, long currentSize);
