@@ -1,8 +1,8 @@
-/* 
+/*
  * Copyright (C) 2019 Intel Corporation
  *
  * SPDX-License-Identifier: BSD-3-Clause
- * 
+ *
  */
 
 package com.intel.pmem.llpl.examples.intarray;
@@ -11,19 +11,19 @@ import com.intel.pmem.llpl.*;
 
 public class IntArray {
     private static final int HEADER_SIZE = 8;
-    TransactionalMemoryBlock arrayBlock;
+    MemoryBlock arrayBlock;
 
-    public static IntArray fromHandle(TransactionalHeap heap, long handle) {
-        TransactionalMemoryBlock arrayBlock = heap.memoryBlockFromHandle(handle);
+    public static IntArray fromHandle(Heap heap, long handle) {
+        MemoryBlock arrayBlock = heap.memoryBlockFromHandle(handle);
         return new IntArray(heap, arrayBlock);
     }
 
-    public IntArray(TransactionalHeap heap, long size) {
-        this.arrayBlock = heap.allocateMemoryBlock(HEADER_SIZE + Integer.BYTES * size);
+    public IntArray(Heap heap, long size) {
+        this.arrayBlock = heap.allocateMemoryBlock(HEADER_SIZE + Integer.BYTES * size, false);
         this.arrayBlock.setLong(0, size);
     }
 
-    private IntArray(TransactionalHeap heap, TransactionalMemoryBlock arrayBlock) {
+    private IntArray(Heap heap, MemoryBlock arrayBlock) {
         this.arrayBlock = arrayBlock;
     }
 
@@ -50,6 +50,6 @@ public class IntArray {
     }
 
     public void free() {
-        arrayBlock.free();
+        arrayBlock.free(false);
     }
 }

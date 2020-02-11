@@ -11,10 +11,10 @@ import com.intel.pmem.llpl.*;
 
 public class IntArrayExample{
     public static void main(String[] args) {
-        String heapName = "/mnt/mem/int_array_example";
-        TransactionalHeap heap = TransactionalHeap.exists(heapName)
-                               ? TransactionalHeap.openHeap(heapName)
-                               : TransactionalHeap.createHeap(heapName, 500_000_000L);
+        String heapName = "/mnt/mem/int_array_example5";
+        Heap heap = Heap.exists(heapName)
+                               ? Heap.openHeap(heapName)
+                               : Heap.createHeap(heapName, 500_000_000L);
 
         long handle = heap.getRoot();
         if (handle == 0) {

@@ -88,7 +88,7 @@ public abstract class AnyHeap {
             poolHandle = openHeap(path, allocationClasses, this.getHeapLayoutID());
         } else if (requestedSize > 0) {
             byteBuffer = createHeap(path, requestedSize, allocationClasses, this.getHeapLayoutID());
-            poolHandle =  byteBuffer.hashCode();
+            poolHandle = byteBuffer.hashCode();
 //            poolHandle = createHeap(path, requestedSize, allocationClasses, this.getHeapLayoutID());
         } else {
             throw new HeapException("Heap size cannot be negative");
@@ -96,7 +96,8 @@ public abstract class AnyHeap {
         if (isNull(byteBuffer)) throw new HeapException("Failed to create heap.");
 //        if (poolHandle == 0) throw new HeapException("Failed to create heap.");
         valid = true;
-        this.size = probeHeapSize(poolHandle, this.size);
+//        this.size = probeHeapSize(poolHandle, this.size);
+        this.size = requestedSize;
         metadata = new Metadata(this);
         open = true;
     }
