@@ -11,7 +11,7 @@ import com.intel.pmem.llpl.*;
 
 public class IntArrayExample{
     public static void main(String[] args) {
-        String heapName = "/mnt/mem/int_array_example5";
+        String heapName = "/mnt/mem/int_array_example6";
         Heap heap = Heap.exists(heapName)
                                ? Heap.openHeap(heapName)
                                : Heap.createHeap(heapName, 500_000_000L);
@@ -20,12 +20,11 @@ public class IntArrayExample{
         if (handle == 0) {
             long size = 10;
             System.out.println("Creating New Array of size " + size);
-            Transaction.create(heap, ()-> {
-                IntArray ia = new IntArray(heap, size);
-                ia.set(5, 10);
-                ia.set(7, 20);
-                heap.setRoot(ia.handle());
-            });
+            IntArray ia = new IntArray(heap, size);
+            ia.set(5, 10);
+            ia.set(7, 20);
+            heap.setRoot(ia.handle());
+            System.out.println("root: " + heap.getRoot());
         }
         else {
             IntArray ia = IntArray.fromHandle(heap, handle);

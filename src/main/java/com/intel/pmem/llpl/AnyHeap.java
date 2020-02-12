@@ -7,25 +7,24 @@
 
 package com.intel.pmem.llpl;
 
+import sun.misc.Unsafe;
+import sun.nio.ch.DirectBuffer;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.Map;
-import java.util.Objects;
+import java.util.Optional;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
-
-import sun.misc.Unsafe;
-import sun.nio.ch.DirectBuffer;
-
-import static java.util.Objects.isNull;
 
 /**
  * The base class for all heap classes.  A heap contains memory allocated in units of memory blocks.<br><br>
@@ -88,13 +87,11 @@ public abstract class AnyHeap {
             poolHandle = openHeap(path, allocationClasses, this.getHeapLayoutID());
         } else if (requestedSize > 0) {
             byteBuffer = createHeap(path, requestedSize, allocationClasses, this.getHeapLayoutID());
-            poolHandle = byteBuffer.hashCode();
-//            poolHandle = createHeap(path, requestedSize, allocationClasses, this.getHeapLayoutID());
+            poolHandle = ((DirectBuffer) byteBuffer).address();
         } else {
             throw new HeapException("Heap size cannot be negative");
         }
-        if (isNull(byteBuffer)) throw new HeapException("Failed to create heap.");
-//        if (poolHandle == 0) throw new HeapException("Failed to create heap.");
+        if (poolHandle == 0) throw new HeapException("Failed to create heap.");
         valid = true;
 //        this.size = probeHeapSize(poolHandle, this.size);
         this.size = requestedSize;
@@ -102,7 +99,6 @@ public abstract class AnyHeap {
         open = true;
     }
 
-    // otwiera stertę
     AnyHeap(String path) {
         this(path, 0);
     }
@@ -114,7 +110,9 @@ public abstract class AnyHeap {
         private AnyMemoryBlock metaBlock;
 
         public Metadata(AnyHeap heap) {
-            long metadataHandle = nativeGetRoot(heap.poolHandle());
+            //todo : fix creating metadata
+//            long metadataHandle = nativeGetRoot(heap.poolHandle());
+            long metadataHandle = heap.poolHandle();
             this.metaBlock = heap.internalMemoryBlockFromHandle(metadataHandle);
             if (metaBlock.getLong(HEAP_VERSION_OFFSET) == 0L) {
                 metaBlock.transactionalSetLong(HEAP_VERSION_OFFSET, AnyHeap.HEAP_VERSION);
@@ -319,12 +317,14 @@ public abstract class AnyHeap {
         return poolHandle;
     }
 
-    long allocateTransactional(long size) {
-        return nativeAllocateTransactional(poolHandle, size, getAllocationClassIndex(size));
+    ByteBuffer allocateTransactional(long size) {
+        throw new RuntimeException("AnyHeap::allocateTransactional to implement");
+//        return nativeAllocateTransactional(poolHandle, size, getAllocationClassIndex(size));
     }
 
-    long allocateAtomic(long size) {
-        return nativeAllocateAtomic(poolHandle, size, getAllocationClassIndex(size));
+    ByteBuffer allocateAtomic(long size) {
+        //todo: create smaller bb from base buffer
+        return byteBuffer.slice();
     }
 
     int getAllocationClassIndex(long size) {
@@ -412,12 +412,14 @@ public abstract class AnyHeap {
         final String fileMode = "rw";
         try (RandomAccessFile fileInputStream = new RandomAccessFile(path, fileMode);
              FileChannel channel = fileInputStream.getChannel()) {
-            return channel.map(FileChannel.MapMode.PRIVATE, 0, size);
+            return Optional.ofNullable(channel.map(FileChannel.MapMode.PRIVATE, 0, size))
+                .filter(ByteBuffer::isDirect)
+                .orElseThrow(() -> new RuntimeException("ByteBuffer is not direct"));
         } catch (IOException e) {
             // in case of IOE method will just return empty ByteBuffer
             e.printStackTrace();
+            throw new RuntimeException("AnyHeap::createHeap cannot create Heap");
         }
-        throw new RuntimeException("AnyHeap::createHeap to implement");
     }
 
 
@@ -427,7 +429,8 @@ public abstract class AnyHeap {
 
 
     long probeHeapSize(long poolId, long currentSize) {
-        throw new RuntimeException("AnyHeap::probeHeapSize to implement");
+        return currentSize;
+//        throw new RuntimeException("AnyHeap::probeHeapSize to implement");
     }
 
     // zamiennik nativeMinHeapSize() - do sprawdzenia
@@ -436,6 +439,12 @@ public abstract class AnyHeap {
         // wartość zwracana przez PMDK - sprawdzić czy to domyślna wartość
         final long magicMinHeapSize = 8388608;
         return magicMinHeapSize;
+    }
+
+
+    private ByteBuffer  allocateAtomic(long poolHandle, long size, int class_index) {
+
+        return byteBuffer.allocateDirect(Math.toIntExact(size));
     }
 
 

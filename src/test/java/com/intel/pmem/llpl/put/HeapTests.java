@@ -10,7 +10,7 @@ import static org.hamcrest.Matchers.is;
 
 public class HeapTests {
 
-  private final static String HEAP_TEST_PATH = "/mnt/mem/testheap.txt";
+  private final static String HEAP_TEST_PATH = "/mnt/mem/testheap3.txt";
 
   @Test
   public void shouldCreateNewHeap() {

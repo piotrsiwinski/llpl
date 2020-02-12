@@ -7,6 +7,8 @@
 
 package com.intel.pmem.llpl;
 
+import sun.nio.ch.DirectBuffer;
+
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.util.Objects;
@@ -44,17 +46,14 @@ public abstract class AnyMemoryBlock {
     private long directAddress;
     private ByteBuffer byteBuffer;
 
-    static {
-        System.loadLibrary("llpl");
-    }
-
     // Constructor
     AnyMemoryBlock(AnyHeap heap, long size, boolean bounded, boolean transactional) {
         if (size <= 0) throw new HeapException("Failed to allocate memory block of size " + size);
         this.heap = heap;
         long allocSize = size + metadataSize();
         Runnable body = () -> {
-            this.address = transactional ? heap.allocateTransactional(allocSize) : heap.allocateAtomic(allocSize);
+            this.byteBuffer = transactional ? heap.allocateTransactional(allocSize) : heap.allocateAtomic(allocSize);
+            address = ((DirectBuffer) byteBuffer).address();
             if (address == 0) throw new HeapException("Failed to allocate memory block of size " + size);
             this.directAddress = directAddress(heap, address);
             if (bounded) setPersistentSize(size);
