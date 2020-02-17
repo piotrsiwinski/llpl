@@ -38,7 +38,20 @@ public class MemoryBlockTests {
 
   }
 
+  @Test
+  public void can_write_long_and_read_it() {
+    MemoryBlock memoryBlock = heap.allocateMemoryBlock(TestVars.MEMORY_BLOCK_SIZE_50MB, false);
 
+    final long value = 1024;
+
+    memoryBlock.setLong(1, value);
+    heap.setRoot(memoryBlock.handle());
+    System.out.println("memoryBlock.handle(): " + memoryBlock.handle());
+    System.out.println("heap.getRoot(): " + heap.getRoot());
+
+    long aLong = memoryBlock.getLong(1);
+    assertThat(aLong, is(value));
+  }
 
 
 }

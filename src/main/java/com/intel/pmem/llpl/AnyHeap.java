@@ -121,11 +121,23 @@ public abstract class AnyHeap {
                 // todo: switch to transactional set long later
                 metaBlock.setLong(HEAP_VERSION_OFFSET, AnyHeap.HEAP_VERSION);
             }
+            // todo: delete this
+            long aLong = metaBlock.getLong(HEAP_VERSION_OFFSET);
+            assert aLong == AnyHeap.HEAP_VERSION;
         }
 
-        public long getUserRoot() {return metaBlock.getLong(USER_ROOT_OFFSET);}
-        public void setUserRoot(long value) {metaBlock.transactionalSetLong(USER_ROOT_OFFSET, value);}
-        public long getVersion() {return metaBlock.getLong(HEAP_VERSION_OFFSET);}
+        public long getUserRoot() {
+            return metaBlock.getLong(USER_ROOT_OFFSET);
+        }
+
+        public void setUserRoot(long value) {
+//            metaBlock.transactionalSetLong(USER_ROOT_OFFSET, value);
+            metaBlock.setLong(USER_ROOT_OFFSET, value);
+        }
+
+        public long getVersion() {
+            return metaBlock.getLong(HEAP_VERSION_OFFSET);
+        }
     }
 
     static boolean getHeap(String path) {

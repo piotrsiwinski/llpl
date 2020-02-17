@@ -57,8 +57,10 @@ public abstract class AnyMemoryBlock {
             if (address == 0) throw new HeapException("Failed to allocate memory block of size " + size);
             this.directAddress = directAddress(heap, address);
             // todo: check this - native method call
-            // if (bounded) setPersistentSize(size);
-            // else this.size = -1;
+            if (bounded) {
+                this.size = size;
+//                 setPersistentSize(size);
+            } else this.size = -1;
         };
         if (transactional) new Transaction(heap).run(body);
         else body.run();
