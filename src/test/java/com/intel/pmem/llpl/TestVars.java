@@ -1,8 +1,8 @@
-/* 
+/*
  * Copyright (C) 2019 Intel Corporation
  *
  * SPDX-License-Identifier: BSD-3-Clause
- * 
+ *
  */
 
 package com.intel.pmem.llpl;
@@ -31,12 +31,15 @@ public class TestVars {
 	public static final int NUM_MIXED_HEAPS = 3;
 	public static String HEAP_NAME = "custom";
 	public static final long HEAP_SIZE = 10 * 1024 * 1024;
+	public static final long HEAP_SIZE_100MB = 100 * 1024 * 1024;
 	public static final String INVALID_HEAP_PATH = "INVALID";
 	public static final String POOL_SET_FILE = "poolset.txt";
+
 
 	public static final long SMALL_HEAP_SIZE = 5 * 1024 * 1024;
 	public static final long NEGATIVE_HEAP_SIZE = 10L * 1024 * 1024 * -1;
 	public static final long MEMORY_BLOCK_SIZE = 1024;
+	public static final long MEMORY_BLOCK_SIZE_50MB = 50L * 1024 * 1024;
 	public static final long MEMORY_BLOCK_SIZE_100MB = 100L * 1024 * 1024;
 	public static final long NEGATIVE_MEMORY_BLOCK_SIZE = 1024 * (-1);
 	public static final boolean NON_TRANSACTIONAL = false;
@@ -51,21 +54,21 @@ public class TestVars {
 	public static final int HEAP_ROOT_DATA = 100;
 
 	public static Heap createHeap() {
-		if (ISDAX) return Heap.createHeap(HEAP_USER_PATH);		
+		if (ISDAX) return Heap.createHeap(HEAP_USER_PATH);
 		Assert.assertTrue(createFolder(HEAP_USER_PATH + HEAP_NAME));
-		return Heap.createHeap(HEAP_USER_PATH + HEAP_NAME); 
+		return Heap.createHeap(HEAP_USER_PATH + HEAP_NAME);
 	}
 
 	public static PersistentHeap createPersistentHeap() {
-		if (ISDAX) return PersistentHeap.createHeap(HEAP_USER_PATH);		
+		if (ISDAX) return PersistentHeap.createHeap(HEAP_USER_PATH);
 		Assert.assertTrue(createFolder(HEAP_USER_PATH + HEAP_NAME));
-		return PersistentHeap.createHeap(HEAP_USER_PATH + HEAP_NAME); 
+		return PersistentHeap.createHeap(HEAP_USER_PATH + HEAP_NAME);
 	}
 
 	public static TransactionalHeap createTransactionalHeap() {
-		if (ISDAX) return TransactionalHeap.createHeap(HEAP_USER_PATH);		
+		if (ISDAX) return TransactionalHeap.createHeap(HEAP_USER_PATH);
 		Assert.assertTrue(createFolder(HEAP_USER_PATH + HEAP_NAME));
-		return TransactionalHeap.createHeap(HEAP_USER_PATH + HEAP_NAME); 
+		return TransactionalHeap.createHeap(HEAP_USER_PATH + HEAP_NAME);
 	}
 
 	public static boolean createFolder(String path) {
@@ -90,7 +93,7 @@ public class TestVars {
 		}
 		try {
 			ret = file.createNewFile();
-		} 
+		}
         catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -109,9 +112,9 @@ public class TestVars {
 		if (Files.exists(pathToBeDeleted)) {
 			try {
 				Files.walk(pathToBeDeleted).sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
-			} 
+			}
             catch (IOException e) {
-			    throw new RuntimeException("An Error occured during files cleanup");	
+			    throw new RuntimeException("An Error occured during files cleanup");
 			}
 		}
 		if (!Files.exists(pathToBeDeleted))

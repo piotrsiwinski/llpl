@@ -64,7 +64,7 @@ public abstract class AnyHeap {
     public static final long MINIMUM_HEAP_SIZE;
 
     static {
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> heaps.forEach((String K, AnyHeap V) -> nativeCloseHeap(V.poolHandle()))));
+//        Runtime.getRuntime().addShutdownHook(new Thread(() -> heaps.forEach((String K, AnyHeap V) -> nativeCloseHeap(V.poolHandle()))));
         MINIMUM_HEAP_SIZE = minHeapSize();
     }
 
@@ -112,11 +112,11 @@ public abstract class AnyHeap {
         public Metadata(AnyHeap heap) {
             //todo : fix creating metadata
 //            long metadataHandle = nativeGetRoot(heap.poolHandle());
-            long metadataHandle = heap.poolHandle();
-            this.metaBlock = heap.internalMemoryBlockFromHandle(metadataHandle);
-            if (metaBlock.getLong(HEAP_VERSION_OFFSET) == 0L) {
-                metaBlock.transactionalSetLong(HEAP_VERSION_OFFSET, AnyHeap.HEAP_VERSION);
-            }
+//            long metadataHandle = heap.poolHandle();
+//            this.metaBlock = heap.internalMemoryBlockFromHandle(metadataHandle);
+//            if (metaBlock.getLong(HEAP_VERSION_OFFSET) == 0L) {
+//                metaBlock.transactionalSetLong(HEAP_VERSION_OFFSET, AnyHeap.HEAP_VERSION);
+//            }
         }
 
         public long getUserRoot() {return metaBlock.getLong(USER_ROOT_OFFSET);}
