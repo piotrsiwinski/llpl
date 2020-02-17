@@ -51,7 +51,7 @@ public abstract class AnyHeap {
     private static final int USER_CLASS_INDEX = 15;
     private static final int MAX_USER_CLASSES = (TOTAL_ALLOCATION_CLASSES - USER_CLASS_INDEX) / 2;
     // todo: get rid of UNSAFE
-    private MappedByteBuffer byteBuffer;
+    static MappedByteBuffer byteBuffer;
     static Unsafe UNSAFE;
 
     private static final Map<String, AnyHeap> heaps = new ConcurrentHashMap<>();
@@ -117,7 +117,9 @@ public abstract class AnyHeap {
             long metadataHandle = magicMetadataHandle;
             this.metaBlock = heap.internalMemoryBlockFromHandle(metadataHandle);
             if (metaBlock.getLong(HEAP_VERSION_OFFSET) == 0L) {
-                metaBlock.transactionalSetLong(HEAP_VERSION_OFFSET, AnyHeap.HEAP_VERSION);
+                // metaBlock.transactionalSetLong(HEAP_VERSION_OFFSET, AnyHeap.HEAP_VERSION);
+                // todo: switch to transactional set long later
+                metaBlock.setLong(HEAP_VERSION_OFFSET, AnyHeap.HEAP_VERSION);
             }
         }
 
@@ -326,7 +328,7 @@ public abstract class AnyHeap {
 
     ByteBuffer allocateAtomic(long size) {
         //todo: create smaller bb from base buffer
-        return byteBuffer.slice();
+        return byteBuffer;
     }
 
     int getAllocationClassIndex(long size) {
