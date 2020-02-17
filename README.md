@@ -64,3 +64,8 @@ We would love to hear your comments and suggestions via https://github.com/pmem/
 ## Contacts ##
 For more information on this library, contact Olasoji Denloye (olasoji.denloye@intel.com) or Steve Dohrmann
 (steve.dohrmann@intel.com).
+
+
+## Path ##
+ Dodać VM options:
+``` -Djava.library.path=/home/siwipi/IdeaProjects/llpl-master/target/cppbuild```

@@ -111,12 +111,14 @@ public abstract class AnyHeap {
 
         public Metadata(AnyHeap heap) {
             //todo : fix creating metadata
-//            long metadataHandle = nativeGetRoot(heap.poolHandle());
-//            long metadataHandle = heap.poolHandle();
-//            this.metaBlock = heap.internalMemoryBlockFromHandle(metadataHandle);
-//            if (metaBlock.getLong(HEAP_VERSION_OFFSET) == 0L) {
-//                metaBlock.transactionalSetLong(HEAP_VERSION_OFFSET, AnyHeap.HEAP_VERSION);
-//            }
+            // todo: delete magic constant
+            final long magicMetadataHandle = 3933520;
+
+            long metadataHandle = magicMetadataHandle;
+            this.metaBlock = heap.internalMemoryBlockFromHandle(metadataHandle);
+            if (metaBlock.getLong(HEAP_VERSION_OFFSET) == 0L) {
+                metaBlock.transactionalSetLong(HEAP_VERSION_OFFSET, AnyHeap.HEAP_VERSION);
+            }
         }
 
         public long getUserRoot() {return metaBlock.getLong(USER_ROOT_OFFSET);}
