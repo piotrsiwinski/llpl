@@ -50,16 +50,19 @@ public abstract class AnyMemoryBlock {
     AnyMemoryBlock(AnyHeap heap, long size, boolean bounded, boolean transactional) {
         if (size <= 0) throw new HeapException("Failed to allocate memory block of size " + size);
         this.heap = heap;
+        this.byteBuffer = Heap.byteBuffer;
         long allocSize = size + metadataSize();
         Runnable body = () -> {
-            this.byteBuffer = transactional ? heap.allocateTransactional(allocSize) : heap.allocateAtomic(allocSize);
-            address = ((DirectBuffer) byteBuffer).address();
+            // todo: tu musi być adres od początku Heapa - przesunięcie od początku
+            this.address = transactional ? heap.allocateTransactional(allocSize) : heap.allocateAtomic(allocSize);
+//            address = ((DirectBuffer) byteBuffer).address();
+
             if (address == 0) throw new HeapException("Failed to allocate memory block of size " + size);
             this.directAddress = directAddress(heap, address);
             // todo: check this - native method call
             if (bounded) {
                 this.size = size;
-//                 setPersistentSize(size);
+                setPersistentSize(size);
             } else this.size = -1;
         };
         if (transactional) new Transaction(heap).run(body);
@@ -491,13 +494,22 @@ public abstract class AnyMemoryBlock {
 
     void setPersistentSize(long size) {
         long address = directAddress + SIZE_OFFSET;
-        nativeAddToTransaction(heap().poolHandle(), address, 8);
-        setAbsoluteLong(address, size);
+        //        todo: check this method
+        //        nativeAddToTransaction(heap().poolHandle(), address, 8);
+        // todo: can replace "setAbsoluteLong(address, size)" with  "setLong(SIZE_OFFSET, size);" ??? i think it's the same
+        //        setAbsoluteLong(address, size);
+//        setLong(SIZE_OFFSET, size);
+
         this.size = size;
+        this.size = 52428800;
     }
 
     long getPersistentSize() {
-        return getAbsoluteLong(directAddress + SIZE_OFFSET);
+        return 52428800;
+//        return this.size;
+        // todo: fix this
+        // return getLong(SIZE_OFFSET);
+        // return getAbsoluteLong(directAddress + SIZE_OFFSET);
     }
 
     long payloadAddress(long payloadOffset) {
@@ -522,35 +534,38 @@ public abstract class AnyMemoryBlock {
     }
 
     void setAbsoluteByte(long address, byte value) {
-        AnyHeap.UNSAFE.putByte(address, value);
+        byteBuffer.put(Math.toIntExact(address), value);
     }
 
     void setAbsoluteShort(long address, short value) {
-        AnyHeap.UNSAFE.putShort(address, value);
+        byteBuffer.putShort(Math.toIntExact(address), value);
     }
 
     void setAbsoluteInt(long address, int value) {
-        AnyHeap.UNSAFE.putInt(address, value);
+        byteBuffer.putInt(Math.toIntExact(address), value);
     }
 
     void setAbsoluteLong(long address, long value) {
-        AnyHeap.UNSAFE.putLong(address, value);
+        byteBuffer.putLong(Math.toIntExact(address), value);
     }
 
     byte getAbsoluteByte(long address) {
-        return AnyHeap.UNSAFE.getByte(address);
+        return byteBuffer.get(Math.toIntExact(address));
+//        return AnyHeap.UNSAFE.getByte(address);
     }
 
     short getAbsoluteShort(long address) {
-        return AnyHeap.UNSAFE.getShort(address);
+        return byteBuffer.getShort(Math.toIntExact(address));
     }
 
     int getAbsoluteInt(long address) {
-        return AnyHeap.UNSAFE.getInt(address);
+        return byteBuffer.getInt(Math.toIntExact(address));
+
     }
 
     long getAbsoluteLong(long address) {
-        return AnyHeap.UNSAFE.getLong(address);
+        return byteBuffer.getLong(Math.toIntExact(address));
+//        return byteBuffer.getLong(Math.toIntExact(address));
     }
 
     void setRawByte(long offset, byte value) {

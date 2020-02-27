@@ -112,13 +112,15 @@ public abstract class AnyHeap {
         public Metadata(AnyHeap heap) {
             //todo : fix creating metadata
             // todo: delete magic constant
-            final long magicMetadataHandle = 3933520;
+            // tą wartość zwraca z metody nativeGetRoot()
+            // tyle metadanych zapisuje PMDK (około 3,5 MB)
+            final long magicMetadataHandle = 3_933_520;
 
             long metadataHandle = magicMetadataHandle;
             this.metaBlock = heap.internalMemoryBlockFromHandle(metadataHandle);
             if (metaBlock.getLong(HEAP_VERSION_OFFSET) == 0L) {
                 // metaBlock.transactionalSetLong(HEAP_VERSION_OFFSET, AnyHeap.HEAP_VERSION);
-                // todo: switch to transactional set long later
+                // todo: switch to transactional setLong later
                 metaBlock.setLong(HEAP_VERSION_OFFSET, AnyHeap.HEAP_VERSION);
             }
             // todo: delete this
@@ -333,14 +335,14 @@ public abstract class AnyHeap {
         return poolHandle;
     }
 
-    ByteBuffer allocateTransactional(long size) {
+    long allocateTransactional(long size) {
         throw new RuntimeException("AnyHeap::allocateTransactional to implement");
 //        return nativeAllocateTransactional(poolHandle, size, getAllocationClassIndex(size));
     }
 
-    ByteBuffer allocateAtomic(long size) {
+    long allocateAtomic(long size) {
         //todo: create smaller bb from base buffer
-        return byteBuffer;
+        return 3_941_392;
     }
 
     int getAllocationClassIndex(long size) {
