@@ -71,7 +71,7 @@ public abstract class AnyHeap {
     private boolean open;
     private final String path;
     private boolean valid;
-    private final long poolHandle; // zastąpić referencją do byteBuffera
+    public final long poolHandle; // zastąpić referencją do byteBuffera
     private long size;
     private SortedMap<Long, Integer> userSizes;
     private long[] allocationClasses;

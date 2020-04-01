@@ -1,5 +1,5 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.intel.pmem.llpl</groupId>
     <artifactId>llpl</artifactId>
@@ -18,25 +18,25 @@
                 <directory>src/main/resources</directory>
             </resource>
         </resources>
-	<plugins>
-	    <plugin>
+        <plugins>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
                 <version>3.0.0-M2</version>
                 <executions>
                     <execution>
-                    <id>enforce-property</id>
-                    <goals>
-                        <goal>enforce</goal>
+                        <id>enforce-property</id>
+                        <goals>
+                            <goal>enforce</goal>
                         </goals>
                         <configuration>
-                        <rules>
-                            <requireProperty>
-                            <property>test.heap.path</property>
-                            <message>You must set a test.heap.path property to run tests!</message>
-                            </requireProperty>
-                        </rules>
-                        <fail>false</fail>
+                            <rules>
+                                <requireProperty>
+                                    <property>test.heap.path</property>
+                                    <message>You must set a test.heap.path property to run tests!</message>
+                                </requireProperty>
+                            </rules>
+                            <fail>false</fail>
                         </configuration>
                     </execution>
                 </executions>
@@ -44,7 +44,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-		<version>3.5.1</version>
+                <version>3.5.1</version>
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
@@ -67,7 +67,8 @@
                                 <exec executable="make" dir="${project.build.directory}/cppbuild" failonerror="true">
                                     <arg line="VERBOSE=1"/>
                                 </exec>
-                                <copy file="${project.build.directory}/cppbuild/libllpl.so" tofile="${project.build.directory}/classes/libllpl.so"/>
+                                <copy file="${project.build.directory}/cppbuild/libllpl.so"
+                                      tofile="${project.build.directory}/classes/libllpl.so"/>
                             </tasks>
                         </configuration>
                         <goals>
@@ -95,78 +96,97 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.22.1</version>
                 <configuration>
-			<argLine>@{argLine} -Djava.library.path=${project.build.directory}/cppbuild</argLine>
-			<suiteXmlFiles>
-				<suiteXmlFile>testng.xml</suiteXmlFile>
-			</suiteXmlFiles>
+                    <argLine>@{argLine} -Djava.library.path=${project.build.directory}/cppbuild</argLine>
+                    <suiteXmlFiles>
+                        <suiteXmlFile>testng.xml</suiteXmlFile>
+                    </suiteXmlFiles>
                 </configuration>
-	    </plugin>
-	    <plugin>
-	    	<groupId>org.apache.maven.plugins</groupId>
-        	<artifactId>maven-javadoc-plugin</artifactId>
-		<version>3.1.1</version>
-		<configuration>
-			<source>8</source>
-			<javadocVersion>1.0.0</javadocVersion>
-		</configuration>
-	</plugin>
-	<plugin>
-  		<groupId>org.jacoco</groupId>
-  		<artifactId>jacoco-maven-plugin</artifactId>
-  		<version>0.8.5</version>
-		<configuration>
-   			<destFile>${basedir}/target/coverage-reports/jacoco-unit.exec</destFile>
-   			<dataFile>${basedir}/target/coverage-reports/jacoco-unit.exec</dataFile>
-		</configuration>
-  		<executions>
-   			<execution>
-				<id>jacoco-initialize</id>
-    				<goals>
-     					<goal>prepare-agent</goal>
-				</goals>
-   			</execution>
-			<execution>
-    				<id>jacoco-report</id>
-    				<phase>test</phase>
-    				<goals>
-     					<goal>report</goal>
-				</goals>
-			</execution>
-			<!--<execution>
-                        <id>jacoco-check</id>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.1.1</version>
+                <configuration>
+                    <source>8</source>
+                    <javadocVersion>1.0.0</javadocVersion>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.5</version>
+                <configuration>
+                    <destFile>${basedir}/target/coverage-reports/jacoco-unit.exec</destFile>
+                    <dataFile>${basedir}/target/coverage-reports/jacoco-unit.exec</dataFile>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>jacoco-initialize</id>
                         <goals>
-                            <goal>check</goal>
+                            <goal>prepare-agent</goal>
                         </goals>
-                        <configuration>
-                            <rules>
-                                <rule>
-                                    <element>PACKAGE</element>
-                                    <limits>
-                                        <limit>
-                                            <counter>LINE</counter>
-                                            <value>COVEREDRATIO</value>
-                                            <minimum>0.9</minimum>
-                                        </limit>
-                                    </limits>
-                                </rule>
-                            </rules>
-		    </configuration>
-	    </execution>-->
-		</executions>
-	</plugin>
+                    </execution>
+                    <execution>
+                        <id>jacoco-report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                    <!--<execution>
+                                <id>jacoco-check</id>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <rule>
+                                            <element>PACKAGE</element>
+                                            <limits>
+                                                <limit>
+                                                    <counter>LINE</counter>
+                                                    <value>COVEREDRATIO</value>
+                                                    <minimum>0.9</minimum>
+                                                </limit>
+                                            </limits>
+                                        </rule>
+                                    </rules>
+                    </configuration>
+                </execution>-->
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>com.theoryinpractise</groupId>
+                <artifactId>googleformatter-maven-plugin</artifactId>
+                <version>1.6.4</version>
+                <configuration>
+                    <filterModified>true</filterModified>
+                    <includeStale>false</includeStale>
+                    <fixImports>true</fixImports>
+                </configuration>
+            </plugin>
+
         </plugins>
     </build>
     <dependencies>
-<!--        INTEL DEPS-->
-	    <dependency>
-	  	<groupId>org.testng</groupId>
-  	    	<artifactId>testng</artifactId>
-  	    	<version>7.0.0</version>
-	    	<scope>test</scope>
-	    </dependency>
-<!--    END OF INTEL DEPS        -->
+        <!--        INTEL DEPS-->
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <version>7.0.0</version>
+            <scope>test</scope>
+        </dependency>
+        <!--    END OF INTEL DEPS        -->
 
-<!--        PUT POZNAN DEPS-->
+        <!--        PUT POZNAN DEPS-->
+
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>28.2-jre</version>
+        </dependency>
+
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
