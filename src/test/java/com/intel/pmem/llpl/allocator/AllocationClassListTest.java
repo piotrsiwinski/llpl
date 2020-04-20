@@ -6,9 +6,9 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class AllocationClassTest {
+class AllocationClassListTest {
 
-  AllocationClass allocationClass = new AllocationClass();
+  AllocationClassList allocationClassList = new AllocationClassList();
 
   @Test
   public void shouldFindClassFor8Bytes() {
@@ -16,7 +16,7 @@ class AllocationClassTest {
     final long requestedSize = 8L;
 
     // act
-    Long firstFreeSlot = allocationClass.findFirstFreeSlot(requestedSize);
+    Long firstFreeSlot = allocationClassList.findFirstFreeSlot(requestedSize);
 
     // assert
     assertThat(firstFreeSlot)
@@ -30,7 +30,7 @@ class AllocationClassTest {
     final long requestedSize = 128L;
 
     // act
-    Long firstFreeSlot = allocationClass.findFirstFreeSlot(requestedSize);
+    Long firstFreeSlot = allocationClassList.findFirstFreeSlot(requestedSize);
 
     // assert
     assertThat(firstFreeSlot)
@@ -44,7 +44,7 @@ class AllocationClassTest {
     final long requestedSize = 393216L;
 
     // act
-    Long firstFreeSlot = allocationClass.findFirstFreeSlot(requestedSize);
+    Long firstFreeSlot = allocationClassList.findFirstFreeSlot(requestedSize);
 
     // assert
     assertThat(firstFreeSlot)
@@ -59,7 +59,7 @@ class AllocationClassTest {
 
     // act and assert exception
     Assertions.assertThrows(HeapException.class, () -> {
-      allocationClass.findFirstFreeSlot(requestedSize);
+      allocationClassList.findFirstFreeSlot(requestedSize);
     });
 
   }
@@ -71,7 +71,7 @@ class AllocationClassTest {
 
     // act and assert exception
     Assertions.assertThrows(HeapException.class, () -> {
-      allocationClass.findFirstFreeSlot(requestedSize);
+      allocationClassList.findFirstFreeSlot(requestedSize);
     });
 
   }
