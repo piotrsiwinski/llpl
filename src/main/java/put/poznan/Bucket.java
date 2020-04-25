@@ -1,4 +1,4 @@
-package com.intel.pmem.llpl.allocator;
+package put.poznan;
 
 /*
  * bucket.c -- bucket implementation

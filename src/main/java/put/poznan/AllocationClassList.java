@@ -1,14 +1,14 @@
-package com.intel.pmem.llpl.allocator;
+package put.poznan;
 
 import com.google.common.collect.ImmutableSet;
 import com.intel.pmem.llpl.HeapException;
 
-import static com.intel.pmem.llpl.allocator.Chunk.*;
 
 class AllocationClassList {
 
   private static final int MAX_ALLOCATION_CLASSES = 255;
   private static final int ALLOC_BLOCK_SIZE = 16;
+  public static final int CHUNK_SIZE = 256 * 1024;
   public static final int MAX_RUN_SIZE = CHUNK_SIZE * 10;
 
   private long granularity = ALLOC_BLOCK_SIZE;

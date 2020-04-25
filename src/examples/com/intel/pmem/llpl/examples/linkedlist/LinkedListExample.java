@@ -12,7 +12,7 @@ import com.intel.pmem.llpl.*;
 public class LinkedListExample {
 
     public static void main(String[] args) {
-        String heapName = "/mnt/mem/linkedlist_example";
+        String heapName = "C:\\Users\\Piotrek\\Documents\\Projects\\pmdk_memory_pools\\llpl_linkedList.pool";
         TransactionalHeap heap = TransactionalHeap.exists(heapName)
                                ? TransactionalHeap.openHeap(heapName)
                                : TransactionalHeap.createHeap(heapName, 500_000_000L);

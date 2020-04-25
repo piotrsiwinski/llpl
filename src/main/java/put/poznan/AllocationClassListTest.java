@@ -1,4 +1,4 @@
-package com.intel.pmem.llpl.allocator;
+package put.poznan;
 
 import com.intel.pmem.llpl.HeapException;
 import org.junit.jupiter.api.Assertions;

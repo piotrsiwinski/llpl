@@ -1,0 +1,6 @@
+// chyba sa potrzebne adresy od poczatku heap
+// bo skad wiedziec po uruchomieniu programu jak pobrac referencje?
+// chyba, ze zapisywac referencje do pliku z jakims id
+// bo po ponownym odtowrzeniu procesu id referencji beda inne
+
+// moze zamiast adresu to UUID bloku?
