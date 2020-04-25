@@ -19,10 +19,7 @@
  * Boston, MA  02110-1301, USA.
  */
 
-package put.poznan.heap;
-
-import put.poznan.root.Root;
-import put.poznan.memoryregion.MemoryRegion;
+package put.poznan.persistent;
 
 public interface Heap {
     void open();
@@ -31,7 +28,11 @@ public interface Heap {
 
     MemoryRegion allocateRegion(long size);
 
+    MemoryRegion allocateRegion(Object obj);
+
     MemoryRegion allocateObjectRegion(long size);
+
+    <T> PersistentPointer<T> makePersistent(String name, T object);
 
     void freeRegion(MemoryRegion region);
 

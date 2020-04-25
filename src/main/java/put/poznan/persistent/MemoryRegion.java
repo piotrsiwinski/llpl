@@ -1,4 +1,4 @@
-package put.poznan.memoryregion;
+package put.poznan.persistent;
 
 public interface MemoryRegion {
     long addr() throws UnsupportedOperationException;
