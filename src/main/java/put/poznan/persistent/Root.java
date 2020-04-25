@@ -4,5 +4,5 @@ public interface Root {
 
     void putObject(String name, Object object);
 
-    <T> T getObject(String name, Class<T> aClass);
+    <T> PersistentPointer<T> getObject(String name, Class<T> aClass);
 }

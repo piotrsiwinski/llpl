@@ -66,6 +66,11 @@ public class VolatileHeap implements Heap {
     }
 
     @Override
+    public MemoryRegion getMemoryRegion(long address) {
+        return new VolatileMemoryRegion(1024);
+    }
+
+    @Override
     public void freeRegion(MemoryRegion region) {
 
     }
