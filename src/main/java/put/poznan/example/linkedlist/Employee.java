@@ -1,4 +1,4 @@
-package put.poznan.example;
+package put.poznan.example.linkedlist;
 
 // Data class
 class Employee {
