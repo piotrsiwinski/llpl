@@ -1,4 +1,4 @@
-package put.poznan.linkedlistexample;
+package put.poznan.example;
 
 import put.poznan.MyHeap;
 import put.poznan.MyMemoryBlock;
