@@ -31,8 +31,8 @@ class WriteReadObject {
 
         System.out.println("Reading value...\n");
         Root root = heap.getRoot();
-        PersistentPointer<Employee> emp1 = root.getObject("emp", Employee.class);
+//        PersistentPointer<Employee> emp1 = root.getObject("emp", Employee.class);
 
-        System.out.println(emp1.getValue());
+//        System.out.println(emp1.getValue());
     }
 }

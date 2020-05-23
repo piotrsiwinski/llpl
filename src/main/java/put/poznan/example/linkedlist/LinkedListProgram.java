@@ -37,15 +37,15 @@ class LinkedListProgram {
             }
         });
 
-        Class<? extends LinkedList> aClass = list.getClass();
-
-        PersistentPointer<LinkedList> ptr2 = heap.getRoot().getObject("employeeList", LinkedList.class);
-
-        ptr2.access(lst -> {
-            for (Object o : lst) {
-                System.out.println(o);
-            }
-        });
+//        Class<? extends LinkedList> aClass = list.getClass();
+//
+//        PersistentPointer<LinkedList> ptr2 = heap.getRoot().getObject("employeeList", LinkedList.class);
+//
+//        ptr2.access(lst -> {
+//            for (Object o : lst) {
+//                System.out.println(o);
+//            }
+//        });
     }
 
 }

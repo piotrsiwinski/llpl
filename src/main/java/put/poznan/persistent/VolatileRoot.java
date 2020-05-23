@@ -28,12 +28,10 @@ class VolatileRoot implements Root {
     }
 
     @Override
-    public <T> PersistentPointer<T> getObject(String name, Class<T> aClass) {
+    public <T> T getObject(String name, Class<T> aClass) {
         return Optional.ofNullable(objectDirectory.get(name))
                 .filter(aClass::isInstance)
                 .map(aClass::cast)
-                // TODO 1: IMPLEMENT ADDRESSES FOR MEMORY REGIONS
-                .map(o -> new SimplePersistentPointer<>(o, heap.getMemoryRegion(1L)))
-                .orElseThrow(() -> new RuntimeException("Cannot getObject from root"));
+                .orElse(null);
     }
 }
