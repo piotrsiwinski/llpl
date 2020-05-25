@@ -1,23 +1,19 @@
 package put.poznan.persistent;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.intel.pmem.llpl.PersistentHeap;
+
+import java.io.Serializable;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import static java.util.Objects.requireNonNull;
-
-class VolatileRoot implements Root {
-
-    private final Heap heap;
-    private final MemoryRegion region;
+class XRoot implements Root, Serializable {
     private final Map<String, Object> objectDirectory;
-    private final int size;
 
 
-    public VolatileRoot(Heap heap, int size) {
-        this.heap = requireNonNull(heap);
-        this.size = size;
-        this.region = new VolatileMemoryRegion(size);
+    public XRoot() {
         this.objectDirectory = new HashMap<>();
     }
 
@@ -29,6 +25,10 @@ class VolatileRoot implements Root {
 
     @Override
     public <T> T getObject(String name, Class<T> aClass) {
+        Object o = objectDirectory.get(name);
+        if (o instanceof HashMap) {
+            return FileHeap.objectMapper.convertValue(o, aClass);
+        }
         return Optional.ofNullable(objectDirectory.get(name))
                 .filter(aClass::isInstance)
                 .map(aClass::cast)

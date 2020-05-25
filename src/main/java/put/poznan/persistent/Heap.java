@@ -34,8 +34,6 @@ public interface Heap {
 
     MemoryRegion getMemoryRegion(long address);
 
-    <T> PersistentPointer<T> makePersistent(String name, T object);
-
     void freeRegion(MemoryRegion region);
 
     Root getRoot();

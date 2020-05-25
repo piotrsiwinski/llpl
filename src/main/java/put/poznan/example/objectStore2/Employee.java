@@ -1,10 +1,13 @@
 package put.poznan.example.objectStore2;
 
 class Employee {
-    private final long id;
+    private long id;
     private String name;
     private String surname;
     private String email;
+
+    public Employee() {
+    }
 
     public Employee(long id, String name, String surname, String email) {
         this.id = id;

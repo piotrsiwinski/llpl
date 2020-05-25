@@ -1,7 +1,6 @@
 package put.poznan.example.linkedlist;
 
 import put.poznan.persistent.Heap;
-import put.poznan.persistent.PersistentPointer;
 import put.poznan.persistent.VolatileHeap;
 
 import java.util.LinkedList;
@@ -21,21 +20,21 @@ class LinkedListProgram {
         LinkedList<Employee> list = new LinkedList<>();
 
 
-        PersistentPointer<LinkedList<Employee>> ptr = heap.makePersistent("employeeList", list);
-
-        System.out.println("Adding elements to linked list");
-        ptr.access(lst -> {
-            lst.add(e1);
-            lst.add(e2);
-            lst.add(e3);
-            lst.add(e4);
-        });
-
-        ptr.access(lst -> {
-            for (Object o : lst) {
-                System.out.println(o);
-            }
-        });
+//        PersistentPointer<LinkedList<Employee>> ptr = heap.makePersistent("employeeList", list);
+//
+//        System.out.println("Adding elements to linked list");
+//        ptr.access(lst -> {
+//            lst.add(e1);
+//            lst.add(e2);
+//            lst.add(e3);
+//            lst.add(e4);
+//        });
+//
+//        ptr.access(lst -> {
+//            for (Object o : lst) {
+//                System.out.println(o);
+//            }
+//        });
 
 //        Class<? extends LinkedList> aClass = list.getClass();
 //

@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.util.Objects.requireNonNull;
 
 public class VolatileHeap implements Heap {
@@ -17,7 +16,7 @@ public class VolatileHeap implements Heap {
     private final Root root;
 
     public VolatileHeap() {
-        root = new VolatileRoot(this, 1024);
+        root = new XRoot();
     }
 
     @Override
@@ -46,18 +45,6 @@ public class VolatileHeap implements Heap {
             e.printStackTrace();
             throw new RuntimeException("Cannot allocate object: " + obj.toString() + ", " + e.getMessage());
         }
-    }
-
-    @Override
-    public <T> PersistentPointer<T> makePersistent(String name, T object) {
-        if (isNullOrEmpty(name)) {
-            throw new RuntimeException("Name cannot be null or empty");
-        }
-        requireNonNull(object, "Object cannot be empty");
-
-        root.putObject(name, object);
-        MemoryRegion memoryRegion = this.allocateRegion(object);
-        return new SimplePersistentPointer<>(object, memoryRegion);
     }
 
     @Override

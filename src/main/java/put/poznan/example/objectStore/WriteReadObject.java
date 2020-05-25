@@ -1,7 +1,6 @@
 package put.poznan.example.objectStore;
 
 import put.poznan.persistent.Heap;
-import put.poznan.persistent.PersistentPointer;
 import put.poznan.persistent.Root;
 import put.poznan.persistent.VolatileHeap;
 
@@ -17,16 +16,16 @@ class WriteReadObject {
     public static void main(String[] args) {
         final Heap heap = new VolatileHeap();
 
-        final Employee emp = new Employee(1L, "John", "Doe", "john.doe@company.com");
-        PersistentPointer<Employee> pointer = heap.makePersistent("emp", emp);
-
-        System.out.println(pointer.getValue());
-
-        pointer
-                .access(e -> e.setSurname("Smith"))
-                .access(e -> e.setEmail("john.smith@company.com"));
-
-        System.out.println(pointer.getValue());
+//        final Employee emp = new Employee(1L, "John", "Doe", "john.doe@company.com");
+//        PersistentPointer<Employee> pointer = heap.makePersistent("emp", emp);
+//
+//        System.out.println(pointer.getValue());
+//
+//        pointer
+//                .access(e -> e.setSurname("Smith"))
+//                .access(e -> e.setEmail("john.smith@company.com"));
+//
+//        System.out.println(pointer.getValue());
 
 
         System.out.println("Reading value...\n");
