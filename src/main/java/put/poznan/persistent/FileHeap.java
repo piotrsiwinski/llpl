@@ -2,6 +2,8 @@ package put.poznan.persistent;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
@@ -11,27 +13,79 @@ import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 public class FileHeap implements Heap {
-    private final Path path;
-    private final long size = 128L * 1024L * 1024L; // Heap size: 128 MB
-    private MappedByteBuffer byteBuffer;
-    private Root root;
     public static final ObjectMapper objectMapper = new ObjectMapper();
-    private Metadata metadata;
+    private static final long TOTAL_BYTE_BUFFER_SIZE = 128L * 1024L * 1024L; // Heap size: 128 MB
+    static final int metadataAddress = 0;
+    static final int metadataSize = 1 * 1024 * 1024; // 1 MB
+    static final int heapAddress = metadataSize; // 20 MB
+    private int heapPointer = heapAddress; // hold free position of bytebuffer to allocate new bytes; convert to allocator later
+
+    private final Path path;
+
+
+    private MappedByteBuffer byteBuffer;
+
+
+    // instead of Root to make it more simple
+    // map -> <object name, object address> map
+    private Map<String, ObjectData> objectDirectory;
 
 
     public FileHeap(Path path) {
-        this.root = new XRoot();
         this.path = path;
         objectMapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
         objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
+        this.objectDirectory = new HashMap<>();
+    }
+
+    public void putObject(String name, Object object) {
+        Transaction.run(this, () -> {
+            try {
+                // write object first
+                byte[] bytes = objectMapper.writeValueAsBytes(object);
+                byteBuffer.position(heapPointer);
+                byteBuffer.put(bytes);
+                this.objectDirectory.put(name, new ObjectData(heapPointer, bytes.length));
+                heapPointer = byteBuffer.position();
+
+                // update object directory
+                byte[] objectDir = objectMapper.writeValueAsBytes(objectDirectory);
+                byteBuffer.position(metadataAddress);
+                byteBuffer.put(objectDir);
+                byteBuffer.force();
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException("Cannot put object into heap");
+            }
+        });
+    }
+
+    public <T> T getObject(String name, Class<T> aClass) {
+        return Optional.ofNullable(objectDirectory.get(name))
+                .map(objectData -> {
+                    byte[] bytes = new byte[objectData.objectSize];
+                    byteBuffer.position(objectData.objectAddress);
+                    byteBuffer.get(bytes);
+                    try {
+                        return objectMapper.readValue(bytes, aClass);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        return null;
+                    }
+                })
+                .orElse(null);
+    }
+
+    public void freeObject(String name) {
+
     }
 
     @Override
     public void open() {
-
         boolean create = false;
         if (!path.toFile().exists()) {
             create = true;
@@ -39,30 +93,19 @@ public class FileHeap implements Heap {
 
         try (RandomAccessFile fileInputStream = new RandomAccessFile(path.toFile(), "rw");
              FileChannel channel = fileInputStream.getChannel()) {
-
-            byteBuffer = Optional.ofNullable(channel.map(FileChannel.MapMode.READ_WRITE, 0, size))
+            byteBuffer = Optional.ofNullable(channel.map(FileChannel.MapMode.READ_WRITE, 0, TOTAL_BYTE_BUFFER_SIZE))
                     .filter(ByteBuffer::isDirect)
                     .orElseThrow(() -> new RuntimeException("ByteBuffer is not direct"));
-
             if (!byteBuffer.isLoaded()) {
                 byteBuffer.load();
             }
-
-            if (create) { // create new root
-                metadata = new Metadata();
-                byte[] metadata = objectMapper.writeValueAsBytes(this.metadata);
-                Transaction.run(this, () -> {
-                    byteBuffer.put(metadata);
-                    byteBuffer.position(Metadata.metadataSize);
-                    byteBuffer.force();
-                });
-            } else {
-                byte[] arr = new byte[Metadata.metadataSize];
+            if (!create) {
+                byte[] arr = new byte[metadataSize];
                 byteBuffer.get(arr);
-                metadata = objectMapper.readValue(arr, Metadata.class);
-                byte[] rootAsBytes = new byte[metadata.rootSize];
-                byteBuffer.get(rootAsBytes);
-                root = objectMapper.readValue(rootAsBytes, XRoot.class);
+                TypeReference<HashMap<String, ObjectData>> typeRef
+                        = new TypeReference<HashMap<String, ObjectData>>() {
+                };
+                objectDirectory = objectMapper.readValue(arr, typeRef);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -72,83 +115,26 @@ public class FileHeap implements Heap {
 
     @Override
     public void close() {
-        try {
-            byte[] rootAsBytes = objectMapper.writeValueAsBytes(root);
-            Transaction.run(this, () -> {
-                byteBuffer.position(Metadata.metadataSize);
-                byteBuffer.put(rootAsBytes);
-                byteBuffer.force();
-            });
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            throw new RuntimeException("AnyHeap::createHeap cannot close Heap");
-        }
-    }
-
-    @Override
-    public MemoryRegion allocateRegion(long size) {
-        return null;
-    }
-
-    @Override
-    public MemoryRegion allocateRegion(Object obj) {
-        return null;
-    }
-
-    @Override
-    public MemoryRegion allocateObjectRegion(long size) {
-        return null;
-    }
-
-    @Override
-    public MemoryRegion getMemoryRegion(long address) {
-        return null;
-    }
-
-    @Override
-    public void freeRegion(MemoryRegion region) {
 
     }
+
 
     @Override
     public Root getRoot() {
-        if (root == null) {
-            throw new RuntimeException("Root is null. You need to open heap first!");
-        }
-        return this.root;
+        throw new RuntimeException("Root is null. You need to open heap first!");
     }
 
-    static class Metadata {
-        static int metadataSize = 256; // 256 bytes
-        private int rootSize = 20 * 1024 * 1024; // 20 MB
-        private int rootOffset = metadataSize;
+    static class ObjectData {
+        private int objectAddress;
+        private int objectSize;
 
-        public Metadata() {
-
+        private ObjectData() {
         }
 
-        public int getRootSize() {
-            return rootSize;
+        ObjectData(int objectAddress, int objectSize) {
+            this.objectAddress = objectAddress;
+            this.objectSize = objectSize;
         }
 
-        public void setRootSize(int rootSize) {
-            this.rootSize = rootSize;
-        }
-
-        public int getRootOffset() {
-            return rootOffset;
-        }
-
-        public void setRootOffset(int rootOffset) {
-            this.rootOffset = rootOffset;
-        }
-
-        public int getMetadataSize() {
-            return metadataSize;
-        }
-
-        public void setMetadataSize(int metadataSize) {
-            this.metadataSize = metadataSize;
-        }
     }
 }

@@ -26,15 +26,9 @@ public interface Heap {
 
     void close();
 
-    MemoryRegion allocateRegion(long size);
+    void putObject(String name, Object object);
 
-    MemoryRegion allocateRegion(Object obj);
-
-    MemoryRegion allocateObjectRegion(long size);
-
-    MemoryRegion getMemoryRegion(long address);
-
-    void freeRegion(MemoryRegion region);
+    <T> T getObject(String name, Class<T> aClass);
 
     Root getRoot();
 }

@@ -10,7 +10,7 @@ import java.util.LinkedList;
  */
 class LinkedListProgram {
     public static void main(String[] args) {
-        Heap heap = new VolatileHeap();
+//        Heap heap = new VolatileHeap();
 
         Employee e1 = new Employee(1, "John", "Doe", "john.doe@company.com");
         Employee e2 = new Employee(2, "Jane", "Roe", "jane.roe@company.com");

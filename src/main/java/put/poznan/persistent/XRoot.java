@@ -1,26 +1,30 @@
 package put.poznan.persistent;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.intel.pmem.llpl.PersistentHeap;
-
 import java.io.Serializable;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import static java.util.Objects.requireNonNull;
+
 class XRoot implements Root, Serializable {
     private final Map<String, Object> objectDirectory;
+    private final Heap heap;
 
 
-    public XRoot() {
+    public XRoot(Heap heap) {
+        this.heap = requireNonNull(heap);
         this.objectDirectory = new HashMap<>();
     }
 
 
     @Override
     public void putObject(String name, Object object) {
-        this.objectDirectory.put(name, object);
+        Transaction.run(heap, () -> {
+            this.objectDirectory.put(name, object);
+
+
+        });
     }
 
     @Override
@@ -33,5 +37,10 @@ class XRoot implements Root, Serializable {
                 .filter(aClass::isInstance)
                 .map(aClass::cast)
                 .orElse(null);
+    }
+
+    @Override
+    public void freeObject(String name) {
+
     }
 }

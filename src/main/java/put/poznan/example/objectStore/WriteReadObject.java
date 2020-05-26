@@ -14,7 +14,7 @@ import put.poznan.persistent.VolatileHeap;
 
 class WriteReadObject {
     public static void main(String[] args) {
-        final Heap heap = new VolatileHeap();
+//        final Heap heap = new VolatileHeap();
 
 //        final Employee emp = new Employee(1L, "John", "Doe", "john.doe@company.com");
 //        PersistentPointer<Employee> pointer = heap.makePersistent("emp", emp);
@@ -28,8 +28,8 @@ class WriteReadObject {
 //        System.out.println(pointer.getValue());
 
 
-        System.out.println("Reading value...\n");
-        Root root = heap.getRoot();
+//        System.out.println("Reading value...\n");
+//        Root root = heap.getRoot();
 //        PersistentPointer<Employee> emp1 = root.getObject("emp", Employee.class);
 
 //        System.out.println(emp1.getValue());
