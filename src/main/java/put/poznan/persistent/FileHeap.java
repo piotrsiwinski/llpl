@@ -19,15 +19,16 @@ import java.util.Optional;
 
 public class FileHeap implements Heap {
     private static final ObjectMapper mapper = new ObjectMapper();
-    private static final long TOTAL_BYTE_BUFFER_SIZE = 128L * 1024L * 1024L; // Heap size: 128 MB
+    private static final long TOTAL_BYTE_BUFFER_SIZE = 128L * 1024 * 1024; // Heap size: 128 MB
     private static final int metadataAddress = 0;
     private static final int metadataSize = 1 * 1024 * 1024; // 1 MB
-    private static final int heapAddress = metadataSize; // 20 MB
+    private static final int heapAddress = metadataSize;
     private final Path path;
 
-    private int heapPointer = heapAddress; // hold free position of bytebuffer to allocate new bytes; convert to allocator later
+    private int heapPointer = heapAddress;
     private MappedByteBuffer byteBuffer;
     private Map<String, ObjectData> objectDirectory;
+    private boolean isOpened = false;
 
 
     public FileHeap(Path path) {
@@ -35,8 +36,10 @@ public class FileHeap implements Heap {
         mapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
         this.objectDirectory = new HashMap<>();
+        this.open();
     }
 
+    @Override
     public void putObject(String name, Object object) {
         Transaction.run(this, () -> {
             try {
@@ -46,18 +49,30 @@ public class FileHeap implements Heap {
                 byteBuffer.put(bytes);
                 this.objectDirectory.put(name, new ObjectData(heapPointer, bytes.length));
                 heapPointer = byteBuffer.position();
-
-                // update object directory
-                byte[] objectDir = mapper.writeValueAsBytes(objectDirectory);
-                byteBuffer.position(metadataAddress);
-                byteBuffer.put(objectDir);
-                byteBuffer.force();
+                updateObjectDirectory();
             } catch (JsonProcessingException e) {
                 throw new RuntimeException("Cannot put object into heap");
             }
         });
     }
 
+    private void updateObjectDirectory() {
+        try {
+            byte[] objectDir = mapper.writeValueAsBytes(objectDirectory);
+            if (objectDir.length > metadataSize) {
+                throw new RuntimeException("Metadata is too big!");
+            }
+            byte[] bytes = new byte[metadataSize];
+            System.arraycopy(objectDir, 0, bytes, 0, objectDir.length);
+            byteBuffer.position(metadataAddress);
+            byteBuffer.put(bytes);
+            byteBuffer.force();
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
     public <T> T getObject(String name, Class<T> aClass) {
         return Optional.ofNullable(objectDirectory.get(name))
                 .map(objectData -> {
@@ -74,12 +89,24 @@ public class FileHeap implements Heap {
                 .orElse(null);
     }
 
+    @Override
     public void freeObject(String name) {
+        if (objectDirectory.containsKey(name)) {
+            ObjectData objectData = objectDirectory.get(name);
+            Transaction.run(this, () -> {
+                byte[] bytes = new byte[objectData.objectSize];
+                byteBuffer.position(objectData.objectAddress);
+                byteBuffer.put(bytes);
+                objectDirectory.remove(name);
+                updateObjectDirectory();
+            });
 
+        }
     }
 
     @Override
     public void open() {
+        if (isOpened) return;
         boolean create = false;
         if (!path.toFile().exists()) {
             create = true;
@@ -97,8 +124,10 @@ public class FileHeap implements Heap {
             if (!create) {
                 byte[] arr = new byte[metadataSize];
                 byteBuffer.get(arr);
-                objectDirectory = mapper.readValue(arr, new TypeReference<HashMap<String, ObjectData>>() {});
+                objectDirectory = mapper.readValue(arr, new TypeReference<HashMap<String, ObjectData>>() {
+                });
             }
+            isOpened = true;
         } catch (IOException e) {
             e.printStackTrace();
             throw new RuntimeException("AnyHeap::createHeap cannot create Heap");
