@@ -29,6 +29,4 @@ public interface Heap {
     void putObject(String name, Object object);
 
     <T> T getObject(String name, Class<T> aClass);
-
-    Root getRoot();
 }

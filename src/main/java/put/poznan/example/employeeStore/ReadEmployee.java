@@ -1,4 +1,4 @@
-package put.poznan.example.objectStore2;
+package put.poznan.example.employeeStore;
 
 import put.poznan.persistent.FileHeap;
 import put.poznan.persistent.Heap;
